@@ -1,0 +1,12 @@
+{
+  "name": "tinyurl",
+  "version": "0.1.0",
+  "description": "simple tiny url generator",
+  "main": "app.js",
+  "scripts": {
+    "test": "node app.js"
+  },
+  "repository": "",
+  "author": "Mallikarjun",
+  "license": "BSD"
+}
