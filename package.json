@@ -6,6 +6,12 @@
   "scripts": {
     "test": "node app.js"
   },
+	"dependencies": {
+		"express": "3.0.x",
+		"jade": "0.27.7",
+		"redis": "0.8.2",
+		"hiredis": "0.1.14"
+	},
   "repository": "",
   "author": "Mallikarjun",
   "license": "BSD"
