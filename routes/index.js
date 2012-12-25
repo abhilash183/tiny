@@ -1,5 +1,6 @@
 var util = require('../utils/util.js');
 var redisDAL = require('../utils/redisDAL.js');
+var redis = new redisDAL();
 
 // exports
 exports.index = function(req, res){
@@ -26,13 +27,17 @@ exports.verify =  function(req, res, next){
 
 exports.tiny = function(req, res, next){
 	var instance_num = util.compute_url_instance(req.long_url);
+	redis.store_tiny(req.long_url, instance_num, function(err, results){
+		if(err){
+		
+		} else {
 
-
+		}
+	});
 	next();
 }
 
 exports.untiny = function(req, res, next){
-
 }
 
 exports.respond = function(req, res){
