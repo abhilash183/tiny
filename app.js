@@ -25,13 +25,13 @@ app.configure('development', function(){
 
 //GET METHODS
 app.get('/', routes.index);
-app.get('/:tinyurl', routes.untiny, routes.respond);
+app.get('/:tinyurl', routes.validate_tiny, routes.untiny, routes.respond);
 
 //POST METHODS
-app.post('/tiny', routes.verify, routes.tiny, routes.respond);
+app.post('/tiny', routes.validate_long, routes.tiny, routes.respond);
 
 //PUT METHODS
-app.put('/tiny', routes.verify, routes.tiny, routes.respond);
+app.put('/tiny', routes.validate_long, routes.tiny, routes.respond);
 
 //DELETE METHODS
 //TODO add delete methods
