@@ -23,6 +23,11 @@ app.configure('development', function(){
 	app.use(express.errorHandler());
 });
 
+process.on('uncaughtException', function(err){
+	console.log('got an error: %s', err.message);
+	console.log('%s', err.stack);
+});
+
 //GET METHODS
 app.get('/', routes.index);
 app.get('/:tinyurl', routes.validate_tiny, routes.untiny, routes.respond);

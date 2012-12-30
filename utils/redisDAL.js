@@ -1,7 +1,7 @@
 var redis = require('redis');
 var events = require('events');
 var crypto = require('crypto');
-var logger = require('winston');
+var logger = require('tracer').colorConsole();
 var util = require('./util.js');
 var config = require('../config.js');
 
@@ -11,16 +11,17 @@ var config = require('../config.js');
  * @param redis_port
  */
 function redisDAL(redis_host, redis_port){
+	var self = this;
 	this.redis_host = redis_host || config.localhost;
 	this.redis_port = redis_port || config.redis_default_port;
 	this.client = redis.createClient();
 
 	this.client.on('error', function (err) {
-		console.log('Error ' + err);
+		console.error('Redis Error: ' + err);
 	});
 
 	this.client.on('ready', function(){
-		console.log('Redis is ready');
+		logger.info('Redis is ready. Connected to ' + self.redis_host + ':' + self.redis_port);
 	});
 }
 
@@ -38,9 +39,8 @@ redisDAL.prototype = Object.create(events.EventEmitter.prototype, {
  * @param long_url -- long_url to be made tiny
  * @param instance -- instance of db
  */
-redisDAL.prototype.store_tiny = function(long_url, instance, callback){
+redisDAL.prototype.store_tiny = function(long_url, instance, url_hash, callback){
 	var self = this;
-	var url_hash = util.hash_url(long_url);
 	var key1 = String(instance) + config.COLON + config.CURRENT;
 	var key2 = String(instance) + config.COLON + config.HASH + config.COLON;
 	var new_tiny;
@@ -54,7 +54,7 @@ redisDAL.prototype.store_tiny = function(long_url, instance, callback){
 				curr_tiny = config.init_tiny;
 				logger.warn('Current tiny_url not found: Init with ' + config.init_tiny);
 			} else {
-				logger.warn('Current tiny_url found:' + curr_tiny);
+				logger.info('Current tiny_url found:' + curr_tiny);
 			}
 			new_tiny = util.get_next_tiny(curr_tiny) + String(instance);
 			if(new_tiny) { 
@@ -63,15 +63,14 @@ redisDAL.prototype.store_tiny = function(long_url, instance, callback){
 					['SET', key1, new_tiny],
 					['HMSET', String(instance) + config.COLON + config.TINY + config.COLON
 																							+ String(new_tiny), config.URL, long_url],
-					['SET', String(instance) + config.COLON + config.HASH + config.COLON 
-																							+ String(url_hash), new_tiny]
+					['SET', String(instance) + config.COLON + String(url_hash), new_tiny]
 				]).exec(function(err, results){
 					if(err){
 						logger.error('Error: ' + err);
 						callback(err, null);
 					} else {
 						//TODO  error checking
-						callback(null, curr_tiny);	
+						callback(null, new_tiny);	
 					}
 				});
 			} else {
@@ -80,7 +79,6 @@ redisDAL.prototype.store_tiny = function(long_url, instance, callback){
 			}
 		}
 	});
-
 }
 
 /**
@@ -93,16 +91,39 @@ redisDAL.prototype.fetch_tiny = function(tiny_url, instance, callback){
 	var key = String(instance) + config.COLON + config.redis_tiny_key 
 																	+ config.COLON + String(tiny_url);
 
-	logger.info('Redis query: ' + key);
+	logger.info('Searching for tiny_url ' + tiny_url + ' on instance ' + instance);
 	self.client.hgetall(key, function(err, results){
-		if(err || !results || !(results.url)){
+		if(err){
 			logger.error('Error: ' + err);
 			callback(err, null);	
 		} else {
-			logger.info(results.url);
-			callback(null, results.url);	
+			if(results && results.url){
+				callback(null, results.url);	
+			} else {
+				logger.warn('No tiny found for query: ' + key + ' returning empty results');
+				callback(null, null);
+			}
 		}
 	})
+}
+
+/**
+ *
+ */
+redisDAL.prototype.check_url_exists = function(long_hash, instance, callback){
+	var self = this;
+	var key = String(instance) + config.COLON + long_hash; 
+
+	self.client.get(key, function(err, results){
+		if(err) {
+			logger.error('Error: ' + err);
+			callback(err, null);
+		} else if(results) {
+			callback(null, results);
+		} else {
+			callback(null, null);	
+		}
+	});
 }
 
 module.exports = redisDAL;

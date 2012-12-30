@@ -1,6 +1,6 @@
 var util = require('../utils/util.js');
 var redisDAL = require('../utils/redisDAL.js');
-var logger = require('winston');
+var logger = require('tracer').colorConsole();
 var config = require('../config.js');
 
 var redis = new redisDAL();
@@ -35,11 +35,12 @@ exports.validate_long = function(req, res, next) {
 	var url = req.body.url;
 	if(url && typeof(url) == 'string'
 				&& util.validate_long(url)){
+		logger.info('Url requested to tiny: ' + url);
 		req.long_url = url;	
 		req.instance = util.compute_url_instance(req.long_url);
 		next();
 	} else {
-		logger.error('Invalid Url: ' + url);
+		logger.error('Url requested to tiny doesn\'t seem to be valid: ' + url);
 		set_response(req, config.ERROR, config.INVALID_URL);
 		exports.respond(req, res);
 	}
@@ -56,13 +57,14 @@ exports.validate_tiny = function(req, res, next){
 		req.tiny_url = tiny_url;	
 		req.instance = parseInt(req.tiny_url[req.tiny_url.length - 1]);
 		if(!isNaN(req.instance)){
+			logger.info('Tiny url requested: ' + tiny_url);
 			is_invalid = false;
 			next();
 		}
 	}
 
 	if(is_invalid){
-		logger.warn('Invalid tiny_url: ' + tiny_url);
+		logger.warn('Tiny url requested isn\'t a valid construct: ' + tiny_url);
 		set_response(req, config.ERROR, config.TINYURL_INVALID);
 		exports.respond(req, res);
 	}
@@ -75,15 +77,32 @@ exports.validate_tiny = function(req, res, next){
  * @param req.instance -- instance number for the url
  */
 exports.tiny = function(req, res, next){
-	redis.store_tiny(req.long_url, req.instance, function(err, tiny){
-		if(err || !tiny){
-			set_response(req, config.ERROR, config.INTERNAL_SERVER_ERROR);
-		} else {
-			logger.info(tiny)
-			set_response(req, config.TINY, config.domain_name + tiny);
-		}
+	var url_hash = util.hash_url(req.long_url);
+
+	if(url_hash) {
+		redis.check_url_exists(url_hash, req.instance, function(err1, tiny1){
+			if(err1){
+				set_response(req, config.ERROR, config.INTERNAL_SERVER_ERROR);
+				next();
+			} else if (tiny1) { 
+				logger.info('Found existing tiny for url ' + req.long_url);
+				set_response(req, config.TINY_URL, config.domain_name + tiny1);	
+				next();
+			} else {
+				redis.store_tiny(req.long_url, req.instance, url_hash, function(err2, tiny2){
+					if(err2 || !tiny2){
+						set_response(req, config.ERROR, config.INTERNAL_SERVER_ERROR);
+					} else {
+						set_response(req, config.TINY_URL, config.domain_name + tiny2);
+					}
+					next();
+				});
+			}
+		});
+	} else {
+		set_response(req, config.ERROR, config.INTERNAL_SERVER_ERROR);
 		next();
-	});
+	}
 }
 
 /**
@@ -93,10 +112,12 @@ exports.tiny = function(req, res, next){
  */
 exports.untiny = function(req, res, next){
 	redis.fetch_tiny(req.tiny_url, req.instance, function(err, long_url){
-		if(err || !long_url){
+		if(err){
 			set_response(req, config.ERROR, config.INTERNAL_SERVER_ERROR);
+		} else if(long_url){
+			set_response(req, config.URL, long_url);
 		} else {
-			set_response(req, config.LONG, long_url);
+			set_response(req, config.ERROR, config.INVALID_URL);
 		}
 		next();
 	});
@@ -112,8 +133,10 @@ exports.untiny = function(req, res, next){
  */
 exports.respond = function(req, res){
 	if(req.has_errors){
+		logger.error('Sending error response: ' + JSON.stringify(req.errors));
 		res.json(req.errors);
 	} else {
+		logger.info('Sending response: ' + JSON.stringify(req.response));
 		res.json(req.response);
 	}
 }

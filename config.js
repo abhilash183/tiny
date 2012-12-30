@@ -1,6 +1,5 @@
 var config = {}
 
-
 //Constant Strings
 config.ERROR = 'error';
 config.INTERNAL_SERVER_ERROR = 'Internal Server Error';
@@ -11,6 +10,7 @@ config.TINYURL_REQUIRED = 'Tiny URL invalid';
 config.COLON = ':';
 config.CURRENT = 'current';
 config.URL = 'url';
+config.TINY_URL = 'tiny_url';
 
 //Config properties
 config.localhost = '127.0.0.1'
