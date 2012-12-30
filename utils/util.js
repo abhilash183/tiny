@@ -1,6 +1,21 @@
 var url = require('url');
-var check = require('validator').check();
+var crypto = require('crypto');
 var config = require('../config.js');
+var chars = '1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+
+//TODO: rethink
+function incr_next(tiny, position){
+	var item = tiny[position];
+	if(position < 0){
+		return tiny.substr(0, position) + chars[0] + tiny.substr(position + 1, tiny.length)
+	} else if (chars.indexOf(item) === (chars.length - 1)){
+		tiny = tiny.substr(0, position) + chars[0] + tiny.substr(position + 1, tiny.length)
+		return incr_next(tiny, position - 1)
+	} else { 
+		tiny = tiny.substr(0, position) + chars[chars.indexOf(item) + 1] + tiny.substr(position + 1, tiny.length)
+		return tiny;
+	}
+}
 
 /**
  * This method validates a url. 
@@ -8,7 +23,8 @@ var config = require('../config.js');
  * @return validity
  */
 exports.validate_long = function(long_url){
-	if(check(long_url).isUrl()){
+	var parsed_url = url.parse(long_url);
+	if(parsed_url && parsed_url.host){
 		return true;
 	} else {
 		return false;
@@ -18,6 +34,7 @@ exports.validate_long = function(long_url){
 /**
  * This method validates tiny_url.
  * @param tiny -- tiny url path(not entire url);
+ * @return validity
  */
 exports.validate_tiny = function(tiny){
 	if(tiny && typeof(tiny) === 'string'
@@ -28,6 +45,18 @@ exports.validate_tiny = function(tiny){
 		return false;
 	}
 }
+
+/**
+ * This method generates md5 hash of url
+ * @param url -- to hash
+ * @return md5hash
+ */
+exports.hash_url = function(url){
+	var md5sum = crypto.createHash('md5');
+	md5sum.update(url);
+	return md5sum.digest(config.url_hash_encode);
+}
+
 
 /**
  * This method generates an instance id for each url. Benefit of generating 
@@ -48,5 +77,11 @@ exports.compute_url_instance = function(long_url){
  * @param tiny_url -- tiny url to be incremented
  */
 exports.get_next_tiny = function(tiny_url){
-	return "AAAAA8";
+	var i = 0;
+	if(!tiny_url){
+		return null;
+	}
+
+	tiny_url = tiny_url.slice(0, tiny_url.length - 1);
+	return incr_next(tiny_url, tiny_url.length - 1);
 }

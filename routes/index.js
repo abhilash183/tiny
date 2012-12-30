@@ -1,5 +1,6 @@
 var util = require('../utils/util.js');
 var redisDAL = require('../utils/redisDAL.js');
+var logger = require('winston');
 var config = require('../config.js');
 
 var redis = new redisDAL();
@@ -38,6 +39,7 @@ exports.validate_long = function(req, res, next) {
 		req.instance = util.compute_url_instance(req.long_url);
 		next();
 	} else {
+		logger.error('Invalid Url: ' + url);
 		set_response(req, config.ERROR, config.INVALID_URL);
 		exports.respond(req, res);
 	}
@@ -60,6 +62,7 @@ exports.validate_tiny = function(req, res, next){
 	}
 
 	if(is_invalid){
+		logger.warn('Invalid tiny_url: ' + tiny_url);
 		set_response(req, config.ERROR, config.TINYURL_INVALID);
 		exports.respond(req, res);
 	}
@@ -72,11 +75,12 @@ exports.validate_tiny = function(req, res, next){
  * @param req.instance -- instance number for the url
  */
 exports.tiny = function(req, res, next){
-	redis.store_tiny(req.long_url, req.instance, function(err, results){
-		if(err || !results.tiny){
+	redis.store_tiny(req.long_url, req.instance, function(err, tiny){
+		if(err || !tiny){
 			set_response(req, config.ERROR, config.INTERNAL_SERVER_ERROR);
 		} else {
-			set_response(req, config.TINY, config.domain_name + results.tiny);
+			logger.info(tiny)
+			set_response(req, config.TINY, config.domain_name + tiny);
 		}
 		next();
 	});
@@ -88,11 +92,11 @@ exports.tiny = function(req, res, next){
  * @param req.instance -- instance number for the tiny_url;
  */
 exports.untiny = function(req, res, next){
-	redis.fetch_tiny(req.tiny_url, req.instance, function(err, results){
-		if(err || !results.url){
+	redis.fetch_tiny(req.tiny_url, req.instance, function(err, long_url){
+		if(err || !long_url){
 			set_response(req, config.ERROR, config.INTERNAL_SERVER_ERROR);
 		} else {
-			set_response(req, config.LONG, results.url);
+			set_response(req, config.LONG, long_url);
 		}
 		next();
 	});
