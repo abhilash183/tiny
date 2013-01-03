@@ -25,6 +25,7 @@ function incr_next(tiny, position){
 exports.validate_long = function(long_url){
 	var parsed_url = url.parse(long_url);
 	if(parsed_url && parsed_url.host){
+		//TODO: check for valid string
 		return true;
 	} else {
 		return false;
@@ -40,10 +41,16 @@ exports.validate_tiny = function(tiny){
 	if(tiny && typeof(tiny) === 'string'
 		&& tiny.length <= config.tiny_max_length
 		&& (!isNaN(parseInt(tiny[tiny.length - 1])))) {
+		//TODO: check for valid string
 		return true;	
 	} else {
 		return false;
 	}
+}
+
+exports.validate_alias = function(tiny){
+	//TODO: check for valid string
+	return false;
 }
 
 /**
@@ -67,7 +74,8 @@ exports.hash_url = function(url){
 exports.compute_url_instance = function(long_url){
 	var parsed_url = url.parse(long_url, false, false);
 	
-	return (long_url.length + parsed_url.pathname.length)%10;
+	//1 - 9, 0 is reserved for alias
+	return (long_url.length + parsed_url.pathname.length)%9 + 1;
 }
 
 /**

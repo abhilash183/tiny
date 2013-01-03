@@ -28,17 +28,48 @@ function set_response(req, level, message) {
 }
 
 /**
+ * This method sets type of call to web. Which is useful since both
+ * web and api are treated by same code base
+ */
+exports.set_web = function(req, res, next){
+	req.is_web = true;
+} 
+
+/**
+ * This method sets type of call to api. Which is useful since both
+ * web and api are treated by same code base
+ */
+exports.set_api = function(req, res, next){
+	req.is_api = true;
+}
+
+/**
  * Method to verify if the url passed to tiny is valid 
  * @param url -- url to be shortened
  */
-exports.validate_long = function(req, res, next) {
+exports.validate_url = function(req, res, next) {
 	var url = req.body.url;
-	if(url && typeof(url) == 'string'
+	var alias = req.body.alias;
+	var valid_alias = true;
+
+	if(url && typeof(url) === 'string'
 				&& util.validate_long(url)){
 		logger.info('Url requested to tiny: ' + url);
-		req.long_url = url;	
-		req.instance = util.compute_url_instance(req.long_url);
-		next();
+		if(alias){
+			if(util.validate_alias(alias)){
+				req.url_alias = alias;
+			} else {
+				logger.error('Url Alias requested isn\'t in correct format: ' + alias);
+				set_response(req, config.ERROR, config.INVALID_ALIAS);
+				exports.respond(req, res);
+				valid_alias = false;
+			}
+		}
+		if(valid_alias){
+			req.long_url = url;	
+			req.instance = util.compute_url_instance(req.long_url);
+			next();
+		}
 	} else {
 		logger.error('Url requested to tiny doesn\'t seem to be valid: ' + url);
 		set_response(req, config.ERROR, config.INVALID_URL);
@@ -50,7 +81,7 @@ exports.validate_long = function(req, res, next) {
  * This method validates the tiny_url 
  * @param req.params.tinyurl -- expects tinyurl to be present in the request
  */
-exports.validate_tiny = function(req, res, next){
+exports.validate_tinyurl = function(req, res, next){
 	var tiny_url = req.params.tinyurl;
 	var is_invalid = true;
 	if(util.validate_tiny(tiny_url)){
@@ -70,38 +101,44 @@ exports.validate_tiny = function(req, res, next){
 	}
 }
 
-/**
- * This method converts the long_url to tiny_url and requests the redis server
- * to store it.
- * @param req.long_url -- expects long_url to be present from verify() function
- * @param req.instance -- instance number for the url
- */
-exports.tiny = function(req, res, next){
+exports.check_url_exists = function(req, res, next){
 	var url_hash = util.hash_url(req.long_url);
 
 	if(url_hash) {
-		redis.check_url_exists(url_hash, req.instance, function(err1, tiny1){
-			if(err1){
+		redis.check_url_exists(url_hash, req.instance, function(err, tiny_url){
+			if(err){
 				set_response(req, config.ERROR, config.INTERNAL_SERVER_ERROR);
 				next();
-			} else if (tiny1) { 
-				logger.info('Found existing tiny for url ' + req.long_url);
-				set_response(req, config.TINY_URL, config.domain_name + tiny1);	
+			} else if (tiny_url) {
+				logger.info('Found existing tiny: ' + tiny_url + ' for url: ' + req.long_url);
+				set_response(req, config.TINY_URL, config.domain_name + tiny_url);	
+				req.tiny_url = tiny_url;
 				next();
+			} else if(req.alias){
+				//TODO:
 			} else {
-				redis.store_tiny(req.long_url, req.instance, url_hash, function(err2, tiny2){
-					if(err2 || !tiny2){
-						set_response(req, config.ERROR, config.INTERNAL_SERVER_ERROR);
-					} else {
-						set_response(req, config.TINY_URL, config.domain_name + tiny2);
-					}
-					next();
-				});
+				next();
 			}
 		});
-	} else {
+	} else { 
 		set_response(req, config.ERROR, config.INTERNAL_SERVER_ERROR);
 		next();
+	}
+}
+
+exports.store_url = function(req, res, next){
+				
+	if(req.tiny_url) {
+		next();
+	} else {
+		redis.store_longurl(req.long_url, req.instance, url_hash, function(err2, tiny2){
+			if(err2 || !tiny2){
+				set_response(req, config.ERROR, config.INTERNAL_SERVER_ERROR);
+			} else {
+				set_response(req, config.TINY_URL, config.domain_name + tiny2);
+			}
+			next();
+		});
 	}
 }
 
@@ -110,8 +147,8 @@ exports.tiny = function(req, res, next){
  * @param req.tiny_url -- expects tinyurl to be present in the request
  * @param req.instance -- instance number for the tiny_url;
  */
-exports.untiny = function(req, res, next){
-	redis.fetch_tiny(req.tiny_url, req.instance, function(err, long_url){
+exports.fetch_longurl = function(req, res, next){
+	redis.fetch_tinyurl(req.tiny_url, req.instance, function(err, long_url){
 		if(err){
 			set_response(req, config.ERROR, config.INTERNAL_SERVER_ERROR);
 		} else if(long_url){
@@ -138,5 +175,17 @@ exports.respond = function(req, res){
 	} else {
 		logger.info('Sending response: ' + JSON.stringify(req.response));
 		res.json(req.response);
+	}
+}
+
+/**
+ * 
+ *
+ */
+exports.redirect = functoon(req, res){
+	if(req.has_errors){
+		//TODO
+	} else if(){
+
 	}
 }

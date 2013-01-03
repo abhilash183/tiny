@@ -39,7 +39,7 @@ redisDAL.prototype = Object.create(events.EventEmitter.prototype, {
  * @param long_url -- long_url to be made tiny
  * @param instance -- instance of db
  */
-redisDAL.prototype.store_tiny = function(long_url, instance, url_hash, callback){
+redisDAL.prototype.store_longurl = function(long_url, instance, url_hash, callback){
 	var self = this;
 	var key1 = String(instance) + config.COLON + config.CURRENT;
 	var key2 = String(instance) + config.COLON + config.HASH + config.COLON;
@@ -86,7 +86,7 @@ redisDAL.prototype.store_tiny = function(long_url, instance, url_hash, callback)
  * @param tiny_url
  * @param instance -- instance of database // depends on how it is implemented
  */
-redisDAL.prototype.fetch_tiny = function(tiny_url, instance, callback){
+redisDAL.prototype.fetch_tinyurl = function(tiny_url, instance, callback){
 	var self = this;
 	var key = String(instance) + config.COLON + config.redis_tiny_key 
 																	+ config.COLON + String(tiny_url);
@@ -108,7 +108,9 @@ redisDAL.prototype.fetch_tiny = function(tiny_url, instance, callback){
 }
 
 /**
- *
+ * This function checks to see if url already exists, to avoid any duplication
+ * @param long_hash -- hash of the url
+ * @param instance -- instance number of url
  */
 redisDAL.prototype.check_url_exists = function(long_hash, instance, callback){
 	var self = this;
@@ -122,6 +124,27 @@ redisDAL.prototype.check_url_exists = function(long_hash, instance, callback){
 			callback(null, results);
 		} else {
 			callback(null, null);	
+		}
+	});
+}
+
+/**
+ * This method checks if tinyurl already exists on instance 0, which is reserved for 
+ * aliasing longurl to specified tiny_url
+ * @param tiny_url -- tiny_url looking for;
+ */
+redisDAL.prototype.check_tinyurl_exists = function(tiny_url, callback){
+	var self = this;
+	var key = String(0) + config.COLON + tiny_url;
+
+	self.client.hmgetall(key, function(err, results){
+		if(err){
+			logger.error('Error: ' + err);
+			callback(err, null);
+		} else if (results){.
+			callback(null, true);
+		} else {
+			callback(null, false);
 		}
 	});
 }

@@ -1,17 +1,13 @@
 tinyurl
 =======
+a real world tinyurl demonstration(probably going to run on http://curt.be).
 
-a simple tinyurl for fun.. 
-
-
-TODO: 
-	logging -- tracer
-	To check if website is blacklisted -- https://developers.google.com/safe-browsing/developers_guide_v2 
-	error handling
-	Assertions
-	test cases
-	Retry calls to I/O
-	request specific url
-	next 100 tiny are created in advance. As soon as a tiny is removed, new ones are created asynchronously. 
-	check if url already exist
-
+TODO:<br> 
+	Error Handling<br>
+	API access tokens<br>
+	Write test cases<br>
+	Retry I/O calls<br>
+	(C)Request specific URL<br>
+	(C)Check if website is malicious. https://developers.google.com/safe-browsing/developers_guide_v2<br>
+	next 100 tiny created in advance<br>
+	List of urls shortened for domain<br>
