@@ -28,19 +28,12 @@ function set_response(req, level, message) {
 }
 
 /**
- * This method sets type of call to web. Which is useful since both
- * web and api are treated by same code base
- */
-exports.set_web = function(req, res, next){
-	req.is_web = true;
-} 
-
-/**
  * This method sets type of call to api. Which is useful since both
  * web and api are treated by same code base
  */
-exports.set_api = function(req, res, next){
+exports.api_request = function(req, res, next){
 	req.is_api = true;
+	next();
 }
 
 /**
@@ -58,6 +51,7 @@ exports.validate_url = function(req, res, next) {
 		if(alias){
 			if(util.validate_alias(alias)){
 				req.url_alias = alias;
+				req.instance = 0;
 			} else {
 				logger.error('Url Alias requested isn\'t in correct format: ' + alias);
 				set_response(req, config.ERROR, config.INVALID_ALIAS);
@@ -67,7 +61,9 @@ exports.validate_url = function(req, res, next) {
 		}
 		if(valid_alias){
 			req.long_url = url;	
-			req.instance = util.compute_url_instance(req.long_url);
+			if(!alias) {
+				req.instance = util.compute_url_instance(req.long_url);
+			}
 			next();
 		}
 	} else {
@@ -102,10 +98,10 @@ exports.validate_tinyurl = function(req, res, next){
 }
 
 exports.check_url_exists = function(req, res, next){
-	var url_hash = util.hash_url(req.long_url);
+	req.url_hash = util.hash_url(req.long_url);
 
-	if(url_hash) {
-		redis.check_url_exists(url_hash, req.instance, function(err, tiny_url){
+	if(req.url_hash) {
+		redis.check_url_exists(req.url_hash, req.instance, function(err, tiny_url){
 			if(err){
 				set_response(req, config.ERROR, config.INTERNAL_SERVER_ERROR);
 				next();
@@ -114,8 +110,18 @@ exports.check_url_exists = function(req, res, next){
 				set_response(req, config.TINY_URL, config.domain_name + tiny_url);	
 				req.tiny_url = tiny_url;
 				next();
-			} else if(req.alias){
-				//TODO:
+			} else if(req.url_alias){
+				redis.check_tinyurl_exists(req.url_alias, req.instance, function(err, flag) {
+        	if(err) {
+						set_response(req, config.ERROR, config.INTERNAL_SERVER_ERROR);
+					} else if(flag){
+						set_response(req, config.ERROR, config.ALIAS_ALREADY_EXISTS);
+						res.tiny_url = req.url_alias;
+					} else {
+						req.tiny_url = req.url_alias;	
+					}
+					next();
+				})
 			} else {
 				next();
 			}
@@ -126,16 +132,33 @@ exports.check_url_exists = function(req, res, next){
 	}
 }
 
-exports.store_url = function(req, res, next){
-				
-	if(req.tiny_url) {
+exports.get_next_tinyurl = function(req, res, next){
+	if(req.tiny_url || req.has_errors || req.url_alias){
 		next();
 	} else {
-		redis.store_longurl(req.long_url, req.instance, url_hash, function(err2, tiny2){
-			if(err2 || !tiny2){
+		redis.get_current_tinyurl(req.instance, function(err, curr_tinyurl) {
+			if(err || !curr_tinyurl){
 				set_response(req, config.ERROR, config.INTERNAL_SERVER_ERROR);
 			} else {
-				set_response(req, config.TINY_URL, config.domain_name + tiny2);
+				req.tiny_url = util.get_next_tiny(curr_tinyurl) + String(req.instance);
+			}
+			next();
+		});
+	}
+}
+
+exports.store_url = function(req, res, next) {
+	if(req.has_errors){
+		next();
+	} else {
+		console.log(req.long_url);
+		console.log(req.tiny_url);
+		console.log(req.instance);
+		redis.store_url(req.long_url, req.tiny_url, req.instance, req.url_hash, function(err2, flag){
+			if(err2 || !flag){
+				set_response(req, config.ERROR, config.INTERNAL_SERVER_ERROR);
+			} else {
+				set_response(req, config.TINY_URL, config.domain_name + req.tiny_url);
 			}
 			next();
 		});
@@ -147,8 +170,8 @@ exports.store_url = function(req, res, next){
  * @param req.tiny_url -- expects tinyurl to be present in the request
  * @param req.instance -- instance number for the tiny_url;
  */
-exports.fetch_longurl = function(req, res, next){
-	redis.fetch_tinyurl(req.tiny_url, req.instance, function(err, long_url){
+exports.find_tinyurl = function(req, res, next){
+	redis.find_tinyurl(req.tiny_url, req.instance, function(err, long_url){
 		if(err){
 			set_response(req, config.ERROR, config.INTERNAL_SERVER_ERROR);
 		} else if(long_url){
@@ -179,13 +202,8 @@ exports.respond = function(req, res){
 }
 
 /**
- * 
+ *
  *
  */
-exports.redirect = functoon(req, res){
-	if(req.has_errors){
-		//TODO
-	} else if(){
-
-	}
+exports.redirect = function(req, res) {
 }

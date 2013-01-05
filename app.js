@@ -5,7 +5,7 @@ var express = require('express'),
 var app = express();
 
 app.configure(function() {
-	app.set('port', 8080);
+	app.set('port', 8081);
 	app.set('host', '127.0.0.1');
 	app.set('view engine', 'jade');
 	app.set('views', __dirname + '/views');
@@ -31,11 +31,11 @@ process.on('uncaughtException', function(err){
 
 //Web calls
 app.get('/', routes.index);
-app.get('/:tinyurl', routes.set_web, routes.validate_tinyurl, routes.fetch_longurl, routes.redirect);
+app.get('/:tinyurl', routes.validate_tinyurl, routes.find_tinyurl, routes.redirect);
 
 //API calls
-app.get('/dev/:tinyurl', routes.set_api, routes.validate_tinyurl, routes.fetch_longurl, routes.respond);
-app.put('/dev/tiny', routes.set_api, routes.validate_url, routes.check_url_exists, routes.store_url, routes.respond);
+app.get('/dev/:tinyurl', routes.api_request, routes.validate_tinyurl, routes.find_tinyurl, routes.respond);
+app.put('/dev/tiny', routes.api_request, routes.validate_url, routes.check_url_exists, routes.get_next_tinyurl, routes.store_url, routes.respond);
 
 app.listen(app.get('port'), app.get('host'), function() {
 	console.log('Express listening on ' + app.get('port') + ' on host ' + app.get('host'));

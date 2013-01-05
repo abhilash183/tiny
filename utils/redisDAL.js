@@ -34,59 +34,67 @@ redisDAL.prototype = Object.create(events.EventEmitter.prototype, {
 });
 
 /**
- * This method stores long_url on specific instance of database by generating
- * a tiny url;
- * @param long_url -- long_url to be made tiny
- * @param instance -- instance of db
+ * This method fetches currently stored tinyurl, so as to increment to the next 
+ * one before storing next url.
+ * @param instance -- database number;
  */
-redisDAL.prototype.store_longurl = function(long_url, instance, url_hash, callback){
+redisDAL.prototype.get_current_tinyurl = function(instance, callback){
 	var self = this;
-	var key1 = String(instance) + config.COLON + config.CURRENT;
-	var key2 = String(instance) + config.COLON + config.HASH + config.COLON;
-	var new_tiny;
+	var key = String(instance) + config.COLON + config.CURRENT;
 
-	self.client.get(key1, function(err, curr_tiny){
+	self.client.get(key, function(err, curr_tiny){
 		if(err){
 			logger.error('Error: ' + err);
-			callback(err, null);	
+			callback(err, null);
 		} else {
 			if(!curr_tiny){
-				curr_tiny = config.init_tiny;
+				curr_tiny = config.init_tiny + String(instance);
 				logger.warn('Current tiny_url not found: Init with ' + config.init_tiny);
-			} else {
-				logger.info('Current tiny_url found:' + curr_tiny);
 			}
-			new_tiny = util.get_next_tiny(curr_tiny) + String(instance);
-			if(new_tiny) { 
-				logger.info('Newly generated tiny: ' + new_tiny);
-				self.client.multi([
-					['SET', key1, new_tiny],
-					['HMSET', String(instance) + config.COLON + config.TINY + config.COLON
-																							+ String(new_tiny), config.URL, long_url],
-					['SET', String(instance) + config.COLON + String(url_hash), new_tiny]
-				]).exec(function(err, results){
-					if(err){
-						logger.error('Error: ' + err);
-						callback(err, null);
-					} else {
-						//TODO  error checking
-						callback(null, new_tiny);	
-					}
-				});
-			} else {
-				logger.error('Error while generating new tiny: ' + new_tiny);
-				callback('Error in generating next tiny', null);
-			}
+			callback(null, curr_tiny);
 		}
 	});
 }
+
+/**
+ * This method stores url with its tiny_url. And stores currently used tinyurl
+ * so that next tinyurl will be an increment of current one
+ * @param url -- url to be stored
+ * @param tiny_url -- tiny_url to be stored as
+ * @param instance -- database number
+ * @param url_hash -- md5sum hash of url
+ */
+redisDAL.prototype.store_url = function(url, tiny_url, instance, url_hash, callback){
+	//TODO: Error checks
+	var key = String(instance) + config.COLON + config.CURRENT;
+	if(!tiny_url){
+		callback('Error', null);
+		return;
+	}
+
+	this.client.multi([
+		['SET', key, tiny_url],
+		['HMSET', String(instance) + config.COLON + config.TINY + config.COLON
+																							+ String(tiny_url), config.URL, url],
+		['SET', String(instance) + config.COLON + String(url_hash), tiny_url]
+	]).exec(function(err, results){
+		if(err){
+			logger.error('Error: ' + err);
+			callback(err, null);
+		} else {
+			callback(null, true);
+		}
+	});
+}
+
+			//new_tiny = util.get_next_tiny(curr_tiny) + String(instance);
 
 /**
  * This method fetches long_url from tiny_url from redis
  * @param tiny_url
  * @param instance -- instance of database // depends on how it is implemented
  */
-redisDAL.prototype.fetch_tinyurl = function(tiny_url, instance, callback){
+redisDAL.prototype.find_tinyurl = function(tiny_url, instance, callback){
 	var self = this;
 	var key = String(instance) + config.COLON + config.redis_tiny_key 
 																	+ config.COLON + String(tiny_url);
@@ -129,19 +137,19 @@ redisDAL.prototype.check_url_exists = function(long_hash, instance, callback){
 }
 
 /**
- * This method checks if tinyurl already exists on instance 0, which is reserved for 
- * aliasing longurl to specified tiny_url
+ * This method checks if tinyurl already exists on specified instance
  * @param tiny_url -- tiny_url looking for;
+ * @param instance -- instance number for database
  */
-redisDAL.prototype.check_tinyurl_exists = function(tiny_url, callback){
+redisDAL.prototype.check_tinyurl_exists = function(tiny_url, instance, callback){
 	var self = this;
-	var key = String(0) + config.COLON + tiny_url;
+	var key = String(instance) + config.COLON + config.TINY + config.COLON + tiny_url;
 
-	self.client.hmgetall(key, function(err, results){
+	self.client.hgetall(key, function(err, results){
 		if(err){
 			logger.error('Error: ' + err);
 			callback(err, null);
-		} else if (results){.
+		} else if (results){
 			callback(null, true);
 		} else {
 			callback(null, false);

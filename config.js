@@ -7,6 +7,7 @@ config.INVALID_URL = 'Invalid URL';
 config.TINY = 'tiny';
 config.LONG = 'long';
 config.TINYURL_REQUIRED = 'Tiny URL invalid';
+config.ALIAS_ALREADY_EXISTS = 'Alias Url already exists'
 config.COLON = ':';
 config.CURRENT = 'current';
 config.URL = 'url';

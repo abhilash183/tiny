@@ -50,7 +50,7 @@ exports.validate_tiny = function(tiny){
 
 exports.validate_alias = function(tiny){
 	//TODO: check for valid string
-	return false;
+	return true;
 }
 
 /**
