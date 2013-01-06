@@ -1,5 +1,7 @@
 var express = require('express'),
 	cluster = require('cluster'),
+	http = require('http'),
+	io = require('socket.io'),
 	routes = require('./routes'),
 	config = require('./config.js'),
 	num_cores = require('os').cpus().length;
@@ -39,9 +41,11 @@ app.get('/:tinyurl', routes.validate_tinyurl, routes.find_tinyurl, routes.redire
 app.get('/dev/:tinyurl', routes.api_request, routes.validate_tinyurl, routes.find_tinyurl, routes.respond);
 app.put('/dev/tiny', routes.api_request, routes.validate_url, routes.check_url_exists, routes.get_next_tinyurl, routes.store_url, routes.respond);
 
+var server = http.createServer(app);
+io = io.listen(server);
 
 if(cluster.isMaster){
-	for(var i = 0; i < num_cores*2; ++i){
+	for(var i = 0; i < num_cores; ++i){
 		cluster.fork();
 	}
 
@@ -49,7 +53,13 @@ if(cluster.isMaster){
 		console.log('worker ' + worker.process.pid + ' died');
 	});
 } else {
-	app.listen(app.get('port'), app.get('host'), function() {
+	server.listen(app.get('port'), app.get('host'), function() {
 		console.log('Express listening on ' + app.get('port') + ' on host ' + app.get('host'));
 	});
 }
+
+io.sockets.on('connection', function(socket){
+	socket.on('news', function(data){
+		console.log(data);
+	});
+});

@@ -11,7 +11,9 @@
 		"jade": "0.27.7",
 		"redis": "0.8.2",
 		"hiredis": "0.1.14",
-		"tracer": "0.5.1"
+		"tracer": "0.5.1",
+		"socket.io": "0.9.13",
+		"mocha": "1.7.4"
 	},
   "repository": "",
   "author": "Mallikarjun",
