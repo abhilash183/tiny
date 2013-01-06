@@ -151,9 +151,6 @@ exports.store_url = function(req, res, next) {
 	if(req.has_errors){
 		next();
 	} else {
-		console.log(req.long_url);
-		console.log(req.tiny_url);
-		console.log(req.instance);
 		redis.store_url(req.long_url, req.tiny_url, req.instance, req.url_hash, function(err2, flag){
 			if(err2 || !flag){
 				set_response(req, config.ERROR, config.INTERNAL_SERVER_ERROR);

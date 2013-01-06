@@ -1,11 +1,13 @@
 var express = require('express'),
+	cluster = require('cluster'),
 	routes = require('./routes'),
-	config = require('./config.js');
+	config = require('./config.js'),
+	num_cores = require('os').cpus().length;
 
 var app = express();
 
 app.configure(function() {
-	app.set('port', 8081);
+	app.set('port', 8080);
 	app.set('host', '127.0.0.1');
 	app.set('view engine', 'jade');
 	app.set('views', __dirname + '/views');
@@ -37,6 +39,17 @@ app.get('/:tinyurl', routes.validate_tinyurl, routes.find_tinyurl, routes.redire
 app.get('/dev/:tinyurl', routes.api_request, routes.validate_tinyurl, routes.find_tinyurl, routes.respond);
 app.put('/dev/tiny', routes.api_request, routes.validate_url, routes.check_url_exists, routes.get_next_tinyurl, routes.store_url, routes.respond);
 
-app.listen(app.get('port'), app.get('host'), function() {
-	console.log('Express listening on ' + app.get('port') + ' on host ' + app.get('host'));
-}); 
+
+if(cluster.isMaster){
+	for(var i = 0; i < num_cores*2; ++i){
+		cluster.fork();
+	}
+
+	cluster.on('exit', function(worker, code, signal){
+		console.log('worker ' + worker.process.pid + ' died');
+	});
+} else {
+	app.listen(app.get('port'), app.get('host'), function() {
+		console.log('Express listening on ' + app.get('port') + ' on host ' + app.get('host'));
+	});
+}
