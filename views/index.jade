@@ -1,8 +1,19 @@
 !!! 5
 html(lang='en') 
-	head  
-		title
-			title  
-	body
-		h1
-			Welcome
+  include head
+
+  body
+    include navigation
+
+    div(class='container')
+      div(class='hero-unit')
+        form(class='form-signin', action='/tiny', method='post')
+          center 
+            h2(class='form-signin-heading') Enter your URL
+          input(type='text', class='input-block-level', name='url', placeholder='Long URL')
+          center
+            h4 http://curt.be/
+              input(type='text', class='span2', name='alias', placeholder='alias');
+          button(class='btn btn-large btn-primary curt-btn', type='submit') Curt it!
+    
+    include footer

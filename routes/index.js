@@ -6,7 +6,7 @@ var config = require('../config.js');
 var redis = new redisDAL();
 
 exports.index = function(req, res){
-	res.render('index');
+	res.render('index', {title: "curt.be - a URL shortener"});
 }
 
 /**
@@ -80,6 +80,7 @@ exports.validate_url = function(req, res, next) {
 exports.validate_tinyurl = function(req, res, next){
 	var tiny_url = req.params.tinyurl;
 	var is_invalid = true;
+
 	if(util.validate_tiny(tiny_url)){
 		req.tiny_url = tiny_url;	
 		req.instance = parseInt(req.tiny_url[req.tiny_url.length - 1]);

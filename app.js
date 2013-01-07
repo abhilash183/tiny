@@ -35,7 +35,9 @@ process.on('uncaughtException', function(err){
 
 //Web calls
 app.get('/', routes.index);
+//app.get('/tiny', route
 app.get('/:tinyurl', routes.validate_tinyurl, routes.find_tinyurl, routes.redirect);
+app.post('/tiny', routes.validate_url, routes.check_url_exists, routes.get_next_tinyurl, routes.store_url, routes.respond);
 
 //API calls
 app.get('/dev/:tinyurl', routes.api_request, routes.validate_tinyurl, routes.find_tinyurl, routes.respond);
@@ -56,10 +58,8 @@ if(cluster.isMaster){
 	server.listen(app.get('port'), app.get('host'), function() {
 		console.log('Express listening on ' + app.get('port') + ' on host ' + app.get('host'));
 	});
-}
 
-io.sockets.on('connection', function(socket){
-	socket.on('news', function(data){
-		console.log(data);
+	io.sockets.on('connection', function(socket){
+		console.log('dd');
 	});
-});
+}
