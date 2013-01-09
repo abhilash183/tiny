@@ -7,13 +7,15 @@ html(lang='en')
 
     div(class='container')
       div(class='hero-unit')
-        form(class='form-signin', action='/tiny', method='post')
+        form(id='tiny-form', class='form-signin', action='/tiny', method='post', onsubmit='return get_tinyurl()')
           center 
             h2(class='form-signin-heading') Enter your URL
-          input(type='text', class='input-block-level', name='url', placeholder='Long URL')
+          input(id='tiny-url', type='text', class='input-block-level', name='url', placeholder='Long URL')
           center
             h4 http://curt.be/
-              input(type='text', class='span2', name='alias', placeholder='alias');
+              input(id='tiny-alias', type='text', class='span2', name='alias', placeholder='alias[A-Za-z0-9]');
+            h5 
+              a(href='#{tiny_url}') #{tiny_url}
           button(class='btn btn-large btn-primary curt-btn', type='submit') Curt it!
     
     include footer

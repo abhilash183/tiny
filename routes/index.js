@@ -6,7 +6,7 @@ var config = require('../config.js');
 var redis = new redisDAL();
 
 exports.index = function(req, res){
-	res.render('index', {title: "curt.be - a URL shortener"});
+	res.render('index', {title: 'curt.be - a URL shortener', tiny_url: req.tiny_url});
 }
 
 /**
@@ -44,6 +44,7 @@ exports.validate_url = function(req, res, next) {
 	var url = req.body.url;
 	var alias = req.body.alias;
 	var valid_alias = true;
+	console.log(req.body);
 
 	if(url && typeof(url) === 'string'
 				&& util.validate_long(url)){
@@ -194,8 +195,13 @@ exports.respond = function(req, res){
 		logger.error('Sending error response: ' + JSON.stringify(req.errors));
 		res.json(req.errors);
 	} else {
-		logger.info('Sending response: ' + JSON.stringify(req.response));
-		res.json(req.response);
+		if(req.is_api){
+			logger.info('Sending response: ' + JSON.stringify(req.response));
+			res.json(req.response);
+		} else {
+			req.tiny_url = req.response.tiny_url
+			exports.index(req, res)
+		}
 	}
 }
 
@@ -204,4 +210,5 @@ exports.respond = function(req, res){
  *
  */
 exports.redirect = function(req, res) {
+	res.redirect(req.response.url);
 }
