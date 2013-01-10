@@ -35,6 +35,10 @@ process.on('uncaughtException', function(err){
 
 //Web calls
 app.get('/', routes.index);
+app.get('/developers', routes.developers);
+app.get('/faq', routes.faq);
+app.get('/stats', routes.stats);
+app.get('/contact', routes.contact);
 app.get('/:tinyurl', routes.validate_tinyurl, routes.find_tinyurl, routes.redirect);
 app.post('/tiny', routes.validate_url, routes.check_url_exists, routes.get_next_tinyurl, routes.store_url, routes.respond);
 

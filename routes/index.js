@@ -6,7 +6,23 @@ var config = require('../config.js');
 var redis = new redisDAL();
 
 exports.index = function(req, res){
-	res.render('index', {title: 'curt.be - a URL shortener', tiny_url: req.tiny_url});
+	res.render('index', {title: config.page_title, tiny_url: req.tiny_url});
+}
+
+exports.developers = function(req, res){
+	res.render('developers', {title: config.page_title});
+}
+
+exports.faq = function(req, res){
+	res.render('faq', {title: config.page_title});
+}
+
+exports.stats = function(req, res){
+	res.render('stats', {title: config.page_title});
+}
+
+exports.contact = function(req, res){
+	res.render('contact', {title: config.page_title});
 }
 
 /**

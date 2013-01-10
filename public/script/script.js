@@ -106,8 +106,6 @@ function create_tinyurl_doc(response){
 	center_elem.appendChild(anchor_elem);
 
 	form_doc.appendChild(center_elem);
-
-	console.log(form_doc)
 }
 
 //global setup

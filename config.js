@@ -16,6 +16,7 @@ config.TINY_URL = 'tiny_url';
 //Config properties
 config.localhost = '127.0.0.1'
 config.redis_default_port = 6379;
+config.page_title = 'curt.be - a URL shortener';
 config.domain_name = 'curt.be/'
 config.tiny_max_length = 6;
 config.max_instance = 10;
