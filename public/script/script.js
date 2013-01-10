@@ -48,8 +48,8 @@ function setup(obj, name){
 
 /********* RPC functions *************/
 function get_tinyurl(){
-	var url = document.forms['tiny-form']['tiny-url'].value;
-	var alias = document.forms['tiny-form']['tiny-alias'].value;
+	var url = document.forms['tiny-form']['long-url'].value;
+	var alias = document.forms['tiny-form']['longurl-alias'].value;
 	var request = {};
 	var args = [];
 
@@ -81,19 +81,33 @@ function get_tinyurl(){
 }
 
 function callback(response){
+	if(response && response.tiny_url){
+		var tinyurl_doc = document.getElementById('tiny_url');
+		if(tinyurl_doc){
+			tinyurl_doc.href = 'http://' + response.tiny_url;
+			tinyurl_doc.innerHTML = response.tiny_url;
+		} else {
+			create_tinyurl_doc(response);
+		}
+	} else {
+		//TODO: invalid url
+	}
+}
+
+function create_tinyurl_doc(response){
 	var form_doc = document.forms['tiny-form'];
 
-	var ancor_elem = document.createElement('a');
-	ancor_elem.href = response.tiny_url;
-	ancor_elem.innerHTML = response.tiny_url;
+	var anchor_elem = document.createElement('a');
+	anchor_elem.id = 'tiny_url';
+	anchor_elem.href = 'http://' + response.tiny_url;
+	anchor_elem.innerHTML = response.tiny_url;
 
 	var center_elem = document.createElement('center');
-	center_elem.appendChild(ancor_elem);
+	center_elem.appendChild(anchor_elem);
 
 	form_doc.appendChild(center_elem);
 
-	console.log(form_doc);
-
+	console.log(form_doc)
 }
 
 //global setup

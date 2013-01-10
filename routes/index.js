@@ -44,7 +44,6 @@ exports.validate_url = function(req, res, next) {
 	var url = req.body.url;
 	var alias = req.body.alias;
 	var valid_alias = true;
-	console.log(req.body);
 
 	if(url && typeof(url) === 'string'
 				&& util.validate_long(url)){

@@ -60,4 +60,6 @@ if(cluster.isMaster){
 }
 
 io.sockets.on('connection', function(socket){
+	socket.on('news', function(data){
+	});
 });

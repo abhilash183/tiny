@@ -10,12 +10,12 @@ html(lang='en')
         form(id='tiny-form', class='form-signin', action='/tiny', method='post', onsubmit='return get_tinyurl()')
           center 
             h2(class='form-signin-heading') Enter your URL
-          input(id='tiny-url', type='text', class='input-block-level', name='url', placeholder='Long URL')
+          input(id='long-url', type='text', class='input-block-level', name='url', placeholder='Long URL')
           center
-            h4 http://curt.be/
-              input(id='tiny-alias', type='text', class='span2', name='alias', placeholder='alias[A-Za-z0-9]');
-            h5 
-              a(href='#{tiny_url}') #{tiny_url}
+            h4 curt.be/
+              input(id='longurl-alias', type='text', class='span2', name='alias', placeholder='alias[A-Za-z\-]');
+            h5
+              a(href='http://#{tiny_url}') #{tiny_url}
           button(class='btn btn-large btn-primary curt-btn', type='submit') Curt it!
     
     include footer
