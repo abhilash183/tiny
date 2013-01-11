@@ -61,12 +61,8 @@ function get_tinyurl(){
 		return false;
 	}
 
-	if(alias){
-		var match = alias.match(alias_pattern);
-		if(match && match.index >= 0){
-			//TODO
-			return false;
-		}
+	if(!alias || !alias.match(/^[A-Za-z\-]+$/)){
+		return false
 	}
 
 	request.url = url;

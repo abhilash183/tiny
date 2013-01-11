@@ -25,7 +25,6 @@ function incr_next(tiny, position){
 exports.validate_long = function(long_url){
 	var parsed_url = url.parse(long_url);
 	if(parsed_url && parsed_url.host){
-		//TODO: check for valid string
 		return true;
 	} else {
 		return false;
@@ -48,9 +47,11 @@ exports.validate_tiny = function(tiny){
 	}
 }
 
-exports.validate_alias = function(tiny){
-	//TODO: check for valid string
-	return true;
+exports.validate_alias = function(alias){
+	if(alias && alias.match(/^[A-Za-z\-]+$/)) {
+		return true;
+	}
+	return false;
 }
 
 /**
