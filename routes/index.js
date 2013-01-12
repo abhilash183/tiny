@@ -103,14 +103,19 @@ exports.validate_tinyurl = function(req, res, next){
 		if(!isNaN(req.instance)){
 			logger.info('Tiny url requested: ' + tiny_url);
 			is_invalid = false;
-			next();
 		}
+	} else if (util.validate_alias(tiny_url)){
+		req.tiny_url = tiny_url;	
+		req.instance = 0;
+		is_invalid = false;
 	}
 
 	if(is_invalid){
 		logger.warn('Tiny url requested isn\'t a valid construct: ' + tiny_url);
 		set_response(req, config.ERROR, config.TINYURL_INVALID);
 		exports.respond(req, res);
+	} else {
+		next();
 	}
 }
 
