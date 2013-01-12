@@ -7,3 +7,6 @@ body {
 	float:right;
 }
 
+.input-error {
+	color: red;
+}
