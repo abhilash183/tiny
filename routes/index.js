@@ -230,5 +230,9 @@ exports.respond = function(req, res){
  *
  */
 exports.redirect = function(req, res) {
-	res.redirect(req.response.url);
+	if(req.response && req.response.url){
+		res.redirect(req.response.url);
+	} else {
+		res.redirect('/')	
+	}
 }

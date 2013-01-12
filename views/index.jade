@@ -8,8 +8,9 @@ html(lang='en')
     div(class='container')
       div(class='hero-unit')
         form(id='tiny-form', class='form-signin', action='/tiny', method='post', onsubmit='return get_tinyurl()')
-          center 
+          center(id='tiny-form-head')
             h2(class='form-signin-heading') Enter your URL
+            h6(class='input-error')
           input(id='long-url', type='text', class='input-block-level', name='url', placeholder='Long URL')
           center
             h4 curt.be/

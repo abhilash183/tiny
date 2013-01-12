@@ -1,3 +1,4 @@
+/*** XMLHTTPRequest Call ***/
 function Request(function_name, opt_argv){
 	var callback = null;
 	var len;
@@ -46,22 +47,27 @@ function setup(obj, name){
 	obj[name] = function(){ Request(name, arguments)}
 }
 
-/********* RPC functions *************/
+
+/** client side functions ***/
 function get_tinyurl(){
-	var url = document.forms['tiny-form']['long-url'].value;
-	var alias = document.forms['tiny-form']['longurl-alias'].value;
-	var request = {};
-	var args = [];
+	var url_doc = document.forms['tiny-form']['long-url'],
+		alias_doc = document.forms['tiny-form']['longurl-alias'],
+		url = url_doc.value,
+		alias = alias_doc.value,
+		alias_pattern = /^[A-Za-z\-]+$/,
+		error_classname = 'error1234445',
+		request = {},
+		args = [];
 
 	//TODO check here -- var url_pattern = //;
-	var alias_pattern = /[^\w]/;
 
 	if(!url){
-		//TODO
+		add_error('url cannot be empty!!')
 		return false;
 	}
 
-	if(alias && !alias.match(/^[A-Za-z\-]+$/)){
+	if(alias && !alias.match(alias_pattern)){
+		add_error('Only alphabets and `-` are allowed for alias')
 		return false
 	}
 
@@ -73,21 +79,13 @@ function get_tinyurl(){
 
 	server.FetchTinyURL.apply(this, args);
 
+	//make rpc instead of post via form
 	return false;
 }
 
-function callback(response){
-	if(response && response.tiny_url){
-		var tinyurl_doc = document.getElementById('tiny_url');
-		if(tinyurl_doc){
-			tinyurl_doc.href = 'http://' + response.tiny_url;
-			tinyurl_doc.innerHTML = response.tiny_url;
-		} else {
-			create_tinyurl_doc(response);
-		}
-	} else {
-		//TODO: invalid url
-	}
+function add_error(message){
+	var error_elem = document.getElementById('tiny-form-head').getElementsByClassName('input-error')[0];
+	error_elem.innerHTML = message;
 }
 
 function create_tinyurl_doc(response){
@@ -102,6 +100,28 @@ function create_tinyurl_doc(response){
 	center_elem.appendChild(anchor_elem);
 
 	form_doc.appendChild(center_elem);
+}
+
+/** RPC Callbacks ***/
+function callback(response){
+	//clear any errors
+	add_error('');
+
+	if(response){
+		if(response.tiny_url){
+			var tinyurl_doc = document.getElementById('tiny_url');
+			if(tinyurl_doc){
+				tinyurl_doc.href = 'http://' + response.tiny_url;
+				tinyurl_doc.innerHTML = response.tiny_url;
+			} else {
+				create_tinyurl_doc(response);
+			}
+		} else if(response.error){
+			add_error(response.error);
+		}
+	} else {
+		add_error('Internal Server Error');
+	}
 }
 
 //global setup
