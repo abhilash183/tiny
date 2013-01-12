@@ -61,7 +61,7 @@ function get_tinyurl(){
 		return false;
 	}
 
-	if(!alias || !alias.match(/^[A-Za-z\-]+$/)){
+	if(alias && !alias.match(/^[A-Za-z\-]+$/)){
 		return false
 	}
 
